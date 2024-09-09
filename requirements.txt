@@ -1,0 +1,5 @@
+ruff==0.5.6
+pandas==2.2.2
+nextmv==0.10.1
+openpyxl==3.1.5
+highspy==1.7.2
