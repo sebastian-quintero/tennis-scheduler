@@ -16,7 +16,7 @@ def main() -> None:
         nextmv.Parameter("group_size", int, 4, "The maximum number of players in each group.", required=False),
         nextmv.Parameter("output", str, "tennis_schedules.xlsx", "Path to the output Excel file.", required=False),
         nextmv.Parameter("duration", int, 30, "Max runtime duration (in seconds).", required=False),
-        nextmv.Parameter("threads", int, 10, "NUmber of threads used by the solver.", required=False),
+        nextmv.Parameter("threads", int, 10, "Number of threads used by the solver.", required=False),
         nextmv.Parameter("dummy_penalty", int, 1, "Penalty for assigning a match to a dummy slot.", required=False),
         nextmv.Parameter(
             name="back_to_back_penalty",

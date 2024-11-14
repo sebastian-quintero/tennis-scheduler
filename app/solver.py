@@ -198,6 +198,72 @@ def __constraints(  # noqa: C901
                         var = assignment_variables[__assign_var_name(match, slot)]
                         solver.addConstr(var == 0, f"demand-{match.match_id}-{slot.name()}-{player.player_id}")
 
+    # Scheduling 3 back-to-back matches for the same player is not allowed.
+    time_block_keys = list(input.slots_by_time_block.keys())
+    for group in groups:
+        for player in group.players:
+            for i in range(len(time_block_keys) - 2):
+                time_block_id_1 = time_block_keys[i]
+                ranking_1 = input.time_block_ranking[time_block_id_1]
+
+                time_block_id_2 = time_block_keys[i + 1]
+                ranking_2 = input.time_block_ranking[time_block_id_2]
+
+                time_block_id_3 = time_block_keys[i + 2]
+                ranking_3 = input.time_block_ranking[time_block_id_3]
+
+                # Only if the three slots are batched together we need
+                # the penalty.
+                if (ranking_2 - ranking_1 != 1) or (ranking_3 - ranking_2 != 1) and (ranking_3 - ranking_1 != 2):
+                    continue
+
+                slot_1_sum = 0
+                for slot in input.slots_by_time_block[time_block_id_1]:
+                    for match in group.matches_by_player[player.player_id]:
+                        var = assignment_variables[__assign_var_name(match, slot)]
+                        slot_1_sum += var
+
+                slot_1_var = solver.addVariable(
+                    0,
+                    1,
+                    type=highspy.HighsVarType.kInteger,
+                    name=f"{player.player_id}-{time_block_id_1}-{slot.name()}",
+                )
+                solver.addConstr(slot_1_var <= slot_1_sum)
+                solver.addConstr(slot_1_var * 999 >= slot_1_sum)
+
+                slot_2_sum = 0
+                for slot in input.slots_by_time_block[time_block_id_2]:
+                    for match in group.matches_by_player[player.player_id]:
+                        var = assignment_variables[__assign_var_name(match, slot)]
+                        slot_2_sum += var
+
+                slot_2_var = solver.addVariable(
+                    0,
+                    1,
+                    type=highspy.HighsVarType.kInteger,
+                    name=f"{player.player_id}-{time_block_id_2}-{slot.name()}",
+                )
+                solver.addConstr(slot_2_var <= slot_2_sum)
+                solver.addConstr(slot_2_var * 999 >= slot_2_sum)
+
+                slot_3_sum = 0
+                for slot in input.slots_by_time_block[time_block_id_3]:
+                    for match in group.matches_by_player[player.player_id]:
+                        var = assignment_variables[__assign_var_name(match, slot)]
+                        slot_3_sum += var
+
+                slot_3_var = solver.addVariable(
+                    0,
+                    1,
+                    type=highspy.HighsVarType.kInteger,
+                    name=f"{player.player_id}-{time_block_id_3}-{slot.name()}",
+                )
+                solver.addConstr(slot_3_var <= slot_3_sum)
+                solver.addConstr(slot_3_var * 999 >= slot_3_sum)
+
+                solver.addConstr(slot_1_var + slot_2_var + slot_3_var <= 2, f"back-to-back-{match.match_id}")
+
 
 def __objective_function(  # noqa: C901
     input: Input,
@@ -252,21 +318,21 @@ def __objective_function(  # noqa: C901
         for player in group.players:
             for match in group.matches_by_player[player.player_id]:
                 for i in range(len(input.slots) - 1):
-                    slot1 = input.slots[i]
-                    ranking1 = input.time_block_ranking[slot1.time_block_id]
-                    var1 = assignment_variables[__assign_var_name(match, slot1)]
+                    slot_1 = input.slots[i]
+                    ranking_1 = input.time_block_ranking[slot_1.time_block_id]
+                    var_1 = assignment_variables[__assign_var_name(match, slot_1)]
 
                     for j in range(i + 1, len(input.slots)):
-                        slot2 = input.slots[j]
-                        ranking2 = input.time_block_ranking[slot2.time_block_id]
-                        var2 = assignment_variables[__assign_var_name(match, slot2)]
+                        slot_2 = input.slots[j]
+                        ranking_2 = input.time_block_ranking[slot_2.time_block_id]
+                        var_2 = assignment_variables[__assign_var_name(match, slot_2)]
 
                         # Only if the diff is exactly 1 it means that they are
                         # back-to-back and we need the penalty.
-                        if ranking2 - ranking1 != 1:
+                        if ranking_2 - ranking_1 != 1:
                             continue
 
-                        penalty = input.options.back_to_back_penalty * (var1 + var2 - 1)
+                        penalty = input.options.back_to_back_penalty * (var_1 + var_2 - 1)
                         value += -1 * penalty
 
     return value

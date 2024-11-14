@@ -82,6 +82,9 @@ class Output:
             for sheet_name, assignments_df in assignments_dfs.items():
                 assignments_df.to_excel(writer, sheet_name=sheet_name, index=False)
 
+            players_df = self.__players_dataframe(self.assignments, self.input)
+            players_df.to_excel(writer, sheet_name="players", index=False)
+
     @staticmethod
     def __assignments_dataframe(assignments: list[Assignment], input: Input) -> dict[str, pd.DataFrame]:  # noqa: C901
         """
@@ -176,4 +179,73 @@ class Output:
                     }
                 )
 
+            data.append(
+                {
+                    "division_id": "-------------------------------------",
+                    "group_id": "-------------------------------------",
+                    "player": "-------------------------------------",
+                    "seed": "-------------------------------------",
+                }
+            )
+
         return pd.DataFrame(data)
+
+    @staticmethod
+    def __players_dataframe(assignments: list[Assignment], input: Input) -> pd.DataFrame:  # noqa: C901
+        data = []
+        assignments = [] if assignments is None else assignments
+        for assignment in assignments:
+            time_block = assignment.slot.time_block_id
+
+            preferred_slot = ""
+            for preference in assignment.match.player1.preferences:
+                if preference.time_block_id != time_block:
+                    continue
+
+                if preference.preference > 0:
+                    preferred_slot += "✅|"
+                elif preference.preference == 0:
+                    preferred_slot += "➖|"
+                elif preference.preference < 0:
+                    preferred_slot += "❌|"
+
+            for preference in assignment.match.player2.preferences:
+                if preference.time_block_id != time_block:
+                    continue
+
+                if preference.preference > 0:
+                    preferred_slot += "|✅"
+                elif preference.preference == 0:
+                    preferred_slot += "|➖"
+                elif preference.preference < 0:
+                    preferred_slot += "|❌"
+
+            data_entry_1 = {
+                "division_id": assignment.match.division,
+                "group_id": assignment.match.group_id,
+                "match_id": assignment.match.match_id,
+                "player": assignment.match.player1.name,
+                "court_id": assignment.slot.court_id,
+                "time_block_id": time_block,
+                "time_block_ranking": input.time_block_ranking[time_block],
+                "preferred_slot": preferred_slot,
+            }
+            data_entry_2 = {
+                "division_id": assignment.match.division,
+                "group_id": assignment.match.group_id,
+                "match_id": assignment.match.match_id,
+                "player": assignment.match.player2.name,
+                "court_id": assignment.slot.court_id,
+                "time_block_id": time_block,
+                "time_block_ranking": input.time_block_ranking[time_block],
+                "preferred_slot": preferred_slot,
+            }
+            data.append(data_entry_1)
+            data.append(data_entry_2)
+
+        by_player_time_block = sorted(
+            copy.deepcopy(data),
+            key=lambda x: (x["division_id"], x["player"], x["time_block_ranking"]),
+        )
+
+        return pd.DataFrame(by_player_time_block)
