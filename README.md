@@ -162,6 +162,10 @@ s \in S \space | \space i_s \notin TP_p,
 m \in MP_p;
 $$
 
+- Three matches can not be schedules in consecutive time blocks.
+
+    TBD
+
 - Variables domain.
 
 $$x_{m,s} \in \{0, 1\}, \quad \forall \space m \in M, s \in S.$$
