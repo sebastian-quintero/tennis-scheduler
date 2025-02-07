@@ -1,35 +1,35 @@
 from app.input import Input
 
 TIME_BLOCK_TRANSLATION = {
-    "PREFERENCIA DE HORARIOS [Sábado 16/11/24 6:00 a.m. - 9:59 a.m.]": [
-        "Sábado 16/11, 6:00 a.m. - 7:15 a.m.",
-        "Sábado 16/11, 7:15 a.m. - 8:30 a.m.",
-        "Sábado 16/11, 8:30 a.m. - 9:45 a.m.",
+    "PREFERENCIA DE HORARIOS [Sábado 08/01/25 6:00 a.m. - 9:59 a.m.]": [
+        "Sábado 08/02, 6:00 a.m. - 7:15 a.m.",
+        "Sábado 08/02, 7:15 a.m. - 8:30 a.m.",
+        "Sábado 08/02, 8:30 a.m. - 9:45 a.m.",
     ],
-    "PREFERENCIA DE HORARIOS [Sábado 16/11/24 10:00 a.m. - 11:59 a.m.]": [
-        "Sábado 16/11, 9:45 a.m. - 11:00 a.m.",
-        "Sábado 16/11, 11:00 a.m. - 12:15 p.m.",
+    "PREFERENCIA DE HORARIOS [Sábado 08/01/25 10:00 a.m. - 11:59 a.m.]": [
+        "Sábado 08/02, 9:45 a.m. - 11:00 a.m.",
+        "Sábado 08/02, 11:00 a.m. - 12:15 p.m.",
     ],
-    "PREFERENCIA DE HORARIOS [Sábado 16/11/24 12:00 m - 4:59 p.m.]": [
-        "Sábado 16/11, 12:15 p.m. - 1:30 p.m.",
-        "Sábado 16/11, 1:30 p.m. - 2:45 p.m.",
-        "Sábado 16/11, 2:45 p.m. - 4:00 p.m.",
-        "Sábado 16/11, 4:00 p.m. - 5:15 p.m.",
+    "PREFERENCIA DE HORARIOS [Sábado 08/01/25 12:00 m - 4:59 p.m.]": [
+        "Sábado 08/02, 12:15 p.m. - 1:30 p.m.",
+        "Sábado 08/02, 1:30 p.m. - 2:45 p.m.",
+        "Sábado 08/02, 2:45 p.m. - 4:00 p.m.",
+        "Sábado 08/02, 4:00 p.m. - 5:15 p.m.",
     ],
-    "PREFERENCIA DE HORARIOS [Domingo 17/11/24 6:00 a.m. - 9:59 a.m.]": [
-        "Domingo 17/11, 6:00 a.m. - 7:15 a.m.",
-        "Domingo 17/11, 7:15 a.m. - 8:30 a.m.",
-        "Domingo 17/11, 8:30 a.m. - 9:45 a.m.",
+    "PREFERENCIA DE HORARIOS [Domingo 09/01/25 6:00 a.m. - 9:59 a.m.]": [
+        "Domingo 09/02, 6:00 a.m. - 7:15 a.m.",
+        "Domingo 09/02, 7:15 a.m. - 8:30 a.m.",
+        "Domingo 09/02, 8:30 a.m. - 9:45 a.m.",
     ],
-    "PREFERENCIA DE HORARIOS [Domingo 17/11/24 10:00 a.m. - 11:59 a.m.]": [
-        "Domingo 17/11, 9:45 a.m. - 11:00 a.m.",
-        "Domingo 17/11, 11:00 a.m. - 12:15 p.m.",
+    "PREFERENCIA DE HORARIOS [Domingo 09/01/25 10:00 a.m. - 11:59 a.m.]": [
+        "Domingo 09/02, 9:45 a.m. - 11:00 a.m.",
+        "Domingo 09/02, 11:00 a.m. - 12:15 p.m.",
     ],
-    "PREFERENCIA DE HORARIOS [Domingo 17/11/24 12:00 m - 4:59 p.m.]": [
-        "Domingo 17/11, 12:15 p.m. - 1:30 p.m.",
-        "Domingo 17/11, 1:30 p.m. - 2:45 p.m.",
-        "Domingo 17/11, 2:45 p.m. - 4:00 p.m.",
-        "Domingo 17/11, 4:00 p.m. - 5:15 p.m.",
+    "PREFERENCIA DE HORARIOS [Domingo 08/01/25 12:00 m - 4:59 p.m.]": [
+        "Domingo 09/02, 12:15 p.m. - 1:30 p.m.",
+        "Domingo 09/02, 1:30 p.m. - 2:45 p.m.",
+        "Domingo 09/02, 2:45 p.m. - 4:00 p.m.",
+        "Domingo 09/02, 4:00 p.m. - 5:15 p.m.",
     ],
 }
 

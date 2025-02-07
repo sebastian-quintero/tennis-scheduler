@@ -182,7 +182,7 @@ def __constraints(  # noqa: C901
 
                 solver.addConstr(slot_sum <= 1, f"player-{player.player_id}-{time_block_id}")
 
-    # Each player has demands for specific time blocks. They cannot be boooked
+    # Each player has demands for specific time blocks. They cannot be booked
     # outside of those.
     for group in groups:
         for player in group.players:
