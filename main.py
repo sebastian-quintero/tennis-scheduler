@@ -2,6 +2,7 @@ import json
 
 import nextmv
 
+from app.groups import load_groups_from_excel, player_groups
 from app.input import Input
 from app.output import Output
 from app.preferences import parse_preferences
@@ -12,20 +13,22 @@ def main() -> None:
     """Entry point for the program."""
 
     options = nextmv.Options(
-        nextmv.Parameter("input", str, "tennis.xlsx", "Path to the input Excel file.", required=False),
-        nextmv.Parameter("group_size", int, 4, "The maximum number of players in each group.", required=False),
-        nextmv.Parameter("output", str, "tennis_schedules.xlsx", "Path to the output Excel file.", required=False),
-        nextmv.Parameter("duration", int, 30, "Max runtime duration (in seconds).", required=False),
-        nextmv.Parameter("threads", int, 10, "Number of threads used by the solver.", required=False),
-        nextmv.Parameter("dummy_penalty", int, 1, "Penalty for assigning a match to a dummy slot.", required=False),
-        nextmv.Parameter(
+        nextmv.Option("input", str, "tennis.xlsx", "Path to the input Excel file.", required=False),
+        nextmv.Option("groups_input", str, "tennis.xlsx", "Path to the groups input Excel file.", required=False),
+        nextmv.Option("group_size", int, 4, "The maximum number of players in each group.", required=False),
+        nextmv.Option("output", str, "tennis_schedules.xlsx", "Path to the output Excel file.", required=False),
+        nextmv.Option("duration", int, 30, "Max runtime duration (in seconds).", required=False),
+        nextmv.Option("threads", int, 10, "Number of threads used by the solver.", required=False),
+        nextmv.Option("dummy_penalty", int, 1, "Penalty for assigning a match to a dummy slot.", required=False),
+        nextmv.Option(
             name="back_to_back_penalty",
-            param_type=int,
+            option_type=int,
             default=1,
             description="Penalty for assigning a match to a back-to-back slot.",
             required=False,
         ),
-        nextmv.Parameter("process_time_blocks", bool, False, "Process the time blocks.", required=False),
+        nextmv.Option("process_time_blocks", bool, False, "Process the time blocks.", required=False),
+        nextmv.Option("process_groups", bool, False, "Process the groups.", required=False),
     )
 
     nextmv.log(f"Reading input from file {options.input}.")
@@ -44,9 +47,17 @@ def main() -> None:
         output.to_excel()
         return
 
-    output = solve(input)
+    if options.process_groups:
+        nextmv.log("Processing groups.")
+        groups = player_groups(input)
+        nextmv.log(f"Processed groups: {len(groups)} groups.")
+        output = Output(options=options, groups=groups)
+        output.to_excel()
+        return
 
-    nextmv.log(f"Writing output to file {options.output}.")
+    groups = load_groups_from_excel(options.groups_input)
+
+    output = solve(input, groups)
     output.to_excel()
 
     if output.statistics is not None:

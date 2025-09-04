@@ -69,14 +69,20 @@ class Output:
     def to_excel(self) -> None:
         """Write the groups and their matches to an Excel file."""
 
+        nextmv.log(f"Writing output to file {self.options.output}.")
+
         with pd.ExcelWriter(self.options.output, engine="openpyxl") as writer:
             if self.parsed_preferences is not None:
                 df = pd.DataFrame(self.parsed_preferences)
                 df.to_excel(writer, sheet_name="parsed_preferences", index=False)
                 return
 
-            groups_df = self.__groups_dataframe(self.groups)
-            groups_df.to_excel(writer, sheet_name="groups", index=False)
+            if self.groups is not None:
+                groups_df = self.__groups_dataframe(self.groups)
+                groups_df.to_excel(writer, sheet_name="groups", index=False)
+
+                matches_df = self.__matches_dataframe(self.groups)
+                matches_df.to_excel(writer, sheet_name="matches", index=False)
 
             assignments_dfs = self.__assignments_dataframe(self.assignments, self.input)
             for sheet_name, assignments_df in assignments_dfs.items():
@@ -185,6 +191,50 @@ class Output:
                     "group_id": "-------------------------------------",
                     "player": "-------------------------------------",
                     "seed": "-------------------------------------",
+                }
+            )
+
+        return pd.DataFrame(data)
+
+    @staticmethod
+    def __matches_dataframe(groups: list[Group]) -> pd.DataFrame:
+        """
+        Convert a list of Group objects to a DataFrame.
+
+        Parameters
+        ----------
+        groups : list[Group]
+            The list of Group objects.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the match information.
+        """
+
+        data = []
+        for group in groups:
+            if group.matches is None:
+                continue
+
+            for match in group.matches:
+                data.append(
+                    {
+                        "division_id": match.division,
+                        "group_id": match.group_id,
+                        "match_id": match.match_id,
+                        "player1": match.player1.name,
+                        "player2": match.player2.name,
+                    }
+                )
+
+            data.append(
+                {
+                    "division_id": "-------------------------------------",
+                    "group_id": "-------------------------------------",
+                    "match_id": "-------------------------------------",
+                    "player1": "-------------------------------------",
+                    "player2": "-------------------------------------",
                 }
             )
 

@@ -1,7 +1,4 @@
-import math
-import random
 import time
-from collections import defaultdict
 
 import highspy
 import nextmv
@@ -10,7 +7,7 @@ from app.input import Input, Slot
 from app.output import Assignment, Group, Match, Output
 
 
-def solve(input: Input) -> Output:
+def solve(input: Input, groups: list[Group]) -> Output:
     """
     Solve the tennis scheduling problem.
 
@@ -28,12 +25,6 @@ def solve(input: Input) -> Output:
     start_time = time.time()
 
     nextmv.log(f"Processing {len(input.players_by_id)} players.")
-
-    groups = __player_groups(input)
-    nextmv.log(f"Created {len(groups)} groups.")
-
-    total_matches = sum(len(group.matches) for group in groups)
-    nextmv.log(f"Created {total_matches} matches.")
 
     solver = highspy.Highs()
     solver.setOptionValue("time_limit", input.options.duration)
@@ -392,87 +383,3 @@ def __assign_var_name(match: Match, slot: Slot) -> str:
     """
 
     return f"{match.match_id}-{slot.name()}"
-
-
-def __player_groups(input: Input) -> list[Group]:
-    """Group players by division.
-
-    Parameters
-    ----------
-    input : Input
-        The input object.
-
-    Returns
-    -------
-    list[Group]
-        The groups.
-    """
-
-    groups = []
-    groups_by_id = {}
-    for division, players in input.players_by_division.items():
-        players = sorted(players, key=lambda x: x.ranking, reverse=False)
-
-        division_groups = []
-        num_groups = math.ceil(len(players) / input.options.group_size)
-
-        for i in range(num_groups):
-            group_id = f"{division}-{i + 1}"
-            seeded = players[i]
-            seeded.seed = True
-            group = Group(group_id=group_id, division=division, players=[seeded])
-            groups_by_id[group_id] = group
-            division_groups.append(group)
-
-        unseeded_players = players[num_groups:]
-        random.shuffle(unseeded_players)
-
-        group_index = 0
-        for player in unseeded_players:
-            group = division_groups[group_index]
-            group.players.append(player)
-            group_index = (group_index + 1) % len(division_groups)
-
-        groups.extend(division_groups)
-
-    for group in groups:
-        matches, matches_by_player = __player_matches(group)
-        group.matches = matches
-        group.matches_by_player = matches_by_player
-
-    return groups
-
-
-def __player_matches(group: Group) -> tuple[list[Match], dict[str, list[Match]]]:
-    """Create matches for a group.
-
-    Parameters
-    ----------
-    group : Group
-        The group.
-
-    Returns
-    -------
-    tuple[list[Match], dict[str, Match]]
-        The matches and the matches by player
-    """
-
-    matches = []
-    counter = 1
-    matches_by_player = defaultdict(list)
-    for i, player1 in enumerate(group.players):
-        for player2 in group.players[i + 1 :]:
-            match_id = f"{group.group_id}-{counter}"
-            match = Match(
-                match_id=match_id,
-                player1=player1,
-                player2=player2,
-                group_id=group.group_id,
-                division=group.division,
-            )
-            matches.append(match)
-            counter += 1
-            matches_by_player[player1.player_id].append(match)
-            matches_by_player[player2.player_id].append(match)
-
-    return matches, dict(matches_by_player)
