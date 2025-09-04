@@ -75,6 +75,7 @@ class Output:
             if self.parsed_preferences is not None:
                 df = pd.DataFrame(self.parsed_preferences)
                 df.to_excel(writer, sheet_name="parsed_preferences", index=False)
+
                 return
 
             if self.groups is not None:
@@ -83,6 +84,8 @@ class Output:
 
                 matches_df = self.__matches_dataframe(self.groups)
                 matches_df.to_excel(writer, sheet_name="matches", index=False)
+
+                return
 
             assignments_dfs = self.__assignments_dataframe(self.assignments, self.input)
             for sheet_name, assignments_df in assignments_dfs.items():
