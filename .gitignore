@@ -169,3 +169,10 @@ cython_debug/
 
 # macOS
 .DS_Store
+
+# Excel files, except the tennis.xlsx template
+*.xlsx
+!tennis.xlsx
+
+# Generated groups
+groups.json

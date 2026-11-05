@@ -3,7 +3,7 @@ import os
 
 import nextmv
 
-from app.groups import player_groups
+from app.groups import resolve_groups
 from app.input import Input
 from app.output import Output
 from app.preferences import parse_preferences
@@ -19,6 +19,20 @@ def main() -> None:
             str,
             "tennis.xlsx",
             "Path to the input Excel file.",
+            required=False,
+        ),
+        nextmv.Option(
+            name="groups_file",
+            option_type=str,
+            default="groups.json",
+            description="Path to the JSON file where groups are saved and re-used from.",
+            required=False,
+        ),
+        nextmv.Option(
+            name="groups_max_age_hours",
+            option_type=int,
+            default=24,
+            description="Re-calculate the groups when the groups file is older than this many hours.",
             required=False,
         ),
         nextmv.Option(
@@ -102,7 +116,7 @@ def main() -> None:
         output.to_excel()
         return
 
-    groups = player_groups(input)
+    groups = resolve_groups(input)
 
     output = solve(input, groups)
     output.to_excel()

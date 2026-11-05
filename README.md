@@ -24,6 +24,13 @@ With the input information, the program:
   players in each group.
 - Creates the possible matches for each group. A group of 4 players produces 6
   distinct matches, whereas a group of 3 players produces 3 distinct matches.
+- Saves the groups and matches to `groups.json` (option `groups_file`),
+  together with when they were generated, in UTC. Later runs load the groups
+  from that file instead of calculating them again, so the solver can be
+  re-run with the same groups. The groups are re-calculated when the file does
+  not exist, or when it is older than `groups_max_age_hours` (24 by default).
+  Delete the file to force new groups. If the players in the file no longer
+  match the players sheet, the program stops and asks you to delete it.
 - Assigns the matches to the available slots. A mathematical optimization
   decision model is used to decide which match should be assigned to which slot
   (given by a time block and a court). Please see the [mathematical
