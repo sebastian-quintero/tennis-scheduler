@@ -69,6 +69,8 @@ The model takes into account the following considerations:
   program tries to assign players to their preferred time blocks, and avoids
   assigning players to their least preferred time blocks.
 - The program tries to not schedule back-to-back matches for the same player.
+- The program tries to not schedule 3 or more matches in the same day for the
+  same player.
 - Matches are assigned to the slots that their division allows.
 - There may be dummy slots that can be used to over-book the club at certain
   times if needed. The program tries to minimize the number of dummy slots
@@ -81,6 +83,9 @@ The model takes into account the following considerations:
 - $M$: set of matches.
 - $S$: set of slots.
 - $T$: set of time blocks.
+- $Y$: set of days.
+- $C$: set of pairs of consecutive time blocks $(t, t')$, i.e. $r_{t'} - r_t = 1$.
+- $TY_y$: subset of time blocks that belong to day $y \in Y$.
 - $TD_d$: subset of time blocks allowed for division $d \in D$.
 - $PM_m$: subset of players in match $m \in M$.
 - $ST_t$: subset of slots that have time block $t \in T$.
@@ -99,17 +104,22 @@ The model takes into account the following considerations:
 - $n$: the penalty for using a dummy slot.
 - $n'$: the penalty for assigning back-to-back matches for the same
   player.
+- $n''$: the penalty for each match over 2 that a player has in the same day.
 - $d_m$: the division of match $m \in M$.
 
 ### Variables
 
 - $x_{m,s}$: 1, if match $m \in M$ is assigned to slot $s \in S$; 0, otherwise.
+- $w_{p,t}$: 1, if player $p \in P$ plays in time block $t$ and in the next
+  time block $t'$, with $(t, t') \in C$; 0, otherwise.
+- $z_{p,y}$: number of matches over 2 that player $p \in P$ has in day
+  $y \in Y$.
 
 ### Objective function
 
 Maximize the overall preference of assignments.
 
-$$\max \alpha - \beta - \gamma$$
+$$\max \alpha - \beta - \gamma - \delta$$
 
 These are the components of the objective function:
 
@@ -122,18 +132,14 @@ $$\alpha = \sum_{s \in S} \sum_{m \in M} \sum_{p \in PM_m} e_{p,s}x_{m,s}$$
 $$\beta = n \sum_{s \in S}b_s \sum_{m \in M} x_{m,s}$$
 
 - The assignments of back-to-back matches for the same player is not preferred.
+  Every pair of consecutive time blocks a player plays in is penalized.
 
-$$
-\gamma = n' \left( \sum_{p \in P}
-  \left( \sum_{m \in MP_p}
-    \left( \sum_{s = 1}^{|S|-1}
-      \left(
-        \sum_{s' = s+1 | r_{i_{s'}} - r_{i_s} = 1}^{|S|} ( x_{m,s} - x_{m,s'} - 1)
-      \right)
-    \right)
-  \right)
-\right)
-$$
+$$\gamma = n' \sum_{p \in P} \sum_{(t, t') \in C} w_{p,t}$$
+
+- Having 3 or more matches in the same day is not preferred. Every match over
+  2 in a day is penalized.
+
+$$\delta = n'' \sum_{p \in P} \sum_{y \in Y} z_{p,y}$$
 
 ### Constraints
 
@@ -162,13 +168,32 @@ s \in S \space | \space i_s \notin TP_p,
 m \in MP_p;
 $$
 
+- Counting the matches over 2 that a player has in a day. Since $z_{p,y}$ is
+  penalized in the objective, the solver keeps it at
+  $\max(0, \text{matches in the day} - 2)$.
+
+$$\sum_{t \in TY_y} \sum_{s \in ST_t} \sum_{m \in MP_p} x_{m,s} - 2 \leq z_{p,y},
+\quad \forall \space p \in P, y \in Y;$$
+
+- Flagging back-to-back matches. A player plays at most one match per time
+  block, so $w_{p,t}$ is forced to 1 when they play in both blocks. Since it is
+  penalized in the objective, the solver keeps it at 0 otherwise.
+
+$$\sum_{s \in ST_t} \sum_{m \in MP_p} x_{m,s} +
+\sum_{s \in ST_{t'}} \sum_{m \in MP_p} x_{m,s} - 1 \leq w_{p,t},
+\quad \forall \space p \in P, (t, t') \in C;$$
+
 - Three matches can not be schedules in consecutive time blocks.
 
     TBD
 
 - Variables domain.
 
-$$x_{m,s} \in \{0, 1\}, \quad \forall \space m \in M, s \in S.$$
+$$x_{m,s} \in \{0, 1\}, \quad \forall \space m \in M, s \in S;$$
+
+$$w_{p,t} \in [0, 1], \quad \forall \space p \in P, (t, t') \in C;$$
+
+$$z_{p,y} \geq 0, \quad \forall \space p \in P, y \in Y.$$
 
 [mathematical-formation]: #mathematical-formulation
 [tennis-file]: ./tennis.xlsx

@@ -82,8 +82,13 @@ class Output:
                 groups_df = self.__groups_dataframe(self.groups)
                 groups_df.to_excel(writer, sheet_name="groups", index=False)
 
-                matches_df = self.__matches_dataframe(self.groups)
+                matches_df = self.__matches_dataframe(self.groups, self.assignments)
                 matches_df.to_excel(writer, sheet_name="matches", index=False)
+
+                if self.assignments is not None:
+                    by_player_df, by_time_df = self.__scheduled_matches_dataframes(self.groups, self.assignments, self.input)
+                    by_player_df.to_excel(writer, sheet_name="by player", index=False)
+                    by_time_df.to_excel(writer, sheet_name="by time", index=False)
 
                 return
 
@@ -200,7 +205,7 @@ class Output:
         return pd.DataFrame(data)
 
     @staticmethod
-    def __matches_dataframe(groups: list[Group]) -> pd.DataFrame:
+    def __matches_dataframe(groups: list[Group], assignments: list[Assignment] | None = None) -> pd.DataFrame:
         """
         Convert a list of Group objects to a DataFrame.
 
@@ -208,6 +213,9 @@ class Output:
         ----------
         groups : list[Group]
             The list of Group objects.
+        assignments : list[Assignment], optional
+            The assignments of matches to slots. When given, the court and time
+            block of each match are added as columns.
 
         Returns
         -------
@@ -215,33 +223,86 @@ class Output:
             The DataFrame containing the match information.
         """
 
+        slots_by_match = {a.match.match_id: a.slot for a in assignments or []}
+        separator = "-------------------------------------"
+
         data = []
         for group in groups:
             if group.matches is None:
                 continue
 
             for match in group.matches:
-                data.append(
-                    {
-                        "division_id": match.division,
-                        "group_id": match.group_id,
-                        "match_id": match.match_id,
-                        "player1": match.player1.name,
-                        "player2": match.player2.name,
-                    }
-                )
+                row = {
+                    "division_id": match.division,
+                    "group_id": match.group_id,
+                    "match_id": match.match_id,
+                    "player1": match.player1.name,
+                    "player2": match.player2.name,
+                }
+                if assignments is not None:
+                    slot = slots_by_match.get(match.match_id)
+                    row["time_block_id"] = slot.time_block_id if slot else ""
+                    row["court_id"] = slot.court_id if slot else ""
+                data.append(row)
 
-            data.append(
+            separator_row = {
+                "division_id": separator,
+                "group_id": separator,
+                "match_id": separator,
+                "player1": separator,
+                "player2": separator,
+            }
+            if assignments is not None:
+                separator_row["time_block_id"] = separator
+                separator_row["court_id"] = separator
+            data.append(separator_row)
+
+        return pd.DataFrame(data)
+
+    @staticmethod
+    def __scheduled_matches_dataframes(
+        groups: list[Group], assignments: list[Assignment], input: Input
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Build the "by player" and "by time" views of the scheduled matches.
+
+        Both have the same columns as the matches sheet. "by player" has one
+        row per player per match (so each match shows up under both players),
+        with a leading `player` column, ordered alphabetically by player name.
+        "by time" has one row per match, ordered by time block and court.
+        """
+
+        def court_key(court_id: str) -> tuple[int, int | str]:
+            return (0, int(court_id)) if str(court_id).isdigit() else (1, str(court_id))
+
+        rows = []
+        for assignment in assignments:
+            match, slot = assignment.match, assignment.slot
+            rows.append(
                 {
-                    "division_id": "-------------------------------------",
-                    "group_id": "-------------------------------------",
-                    "match_id": "-------------------------------------",
-                    "player1": "-------------------------------------",
-                    "player2": "-------------------------------------",
+                    "division_id": match.division,
+                    "group_id": match.group_id,
+                    "match_id": match.match_id,
+                    "player1": match.player1.name,
+                    "player2": match.player2.name,
+                    "time_block_id": slot.time_block_id,
+                    "court_id": slot.court_id,
+                    "_ranking": input.time_block_ranking[slot.time_block_id],
                 }
             )
 
-        return pd.DataFrame(data)
+        by_time = sorted(rows, key=lambda r: (r["_ranking"], court_key(r["court_id"])))
+
+        by_player = []
+        for row in rows:
+            by_player.append({"player": row["player1"], **row})
+            by_player.append({"player": row["player2"], **row})
+        by_player.sort(key=lambda r: (r["player"].casefold(), r["_ranking"], court_key(r["court_id"])))
+
+        def frame(data: list[dict]) -> pd.DataFrame:
+            return pd.DataFrame(data).drop(columns="_ranking")
+
+        return frame(by_player), frame(by_time)
 
     @staticmethod
     def __players_dataframe(assignments: list[Assignment], input: Input) -> pd.DataFrame:  # noqa: C901

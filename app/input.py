@@ -148,6 +148,9 @@ class Input:
     """The raw preferences data."""
     time_block_demands_by_player: dict[str, list[str]] | None = field(default_factory=dict)
     """The time block demands by player."""
+    separations_by_player: dict[str, set[str]] | None = field(default_factory=dict)
+    """For each player, the players that cannot be placed in the same group.
+    Built from the optional `player_separations` sheet."""
 
     @classmethod
     def from_excel(cls, options: nextmv.Options) -> "Input":
@@ -220,6 +223,20 @@ class Input:
             time_block_id = str(demand["time_block_id"])
             time_block_demands[player_id].append(time_block_id)
 
+        # Optional sheet: rows that share a `separation_id` are players that
+        # cannot be placed in the same group.
+        separation_sets = defaultdict(set)
+        for row in input.data.get("player_separations", []):
+            player_id = str(row["player_id"])
+            if player_id not in players_by_id:
+                raise ValueError(f"player_separations: unknown player_id '{player_id}'")
+            separation_sets[str(row["separation_id"])].add(player_id)
+
+        separations_by_player = defaultdict(set)
+        for members in separation_sets.values():
+            for member in members:
+                separations_by_player[member] |= members - {member}
+
         return cls(
             raw=input,
             options=options,
@@ -231,4 +248,5 @@ class Input:
             slots_by_time_block=dict(slots_by_time_block),
             raw_preferences=input.data["raw_preferences"],
             time_block_demands_by_player=dict(time_block_demands),
+            separations_by_player=dict(separations_by_player),
         )

@@ -40,13 +40,7 @@ def player_groups(input: Input) -> list[Group]:
             division_groups.append(group)
 
         unseeded_players = players[num_groups:]
-        random.shuffle(unseeded_players)
-
-        group_index = 0
-        for player in unseeded_players:
-            group = division_groups[group_index]
-            group.players.append(player)
-            group_index = (group_index + 1) % len(division_groups)
+        __assign_unseeded(division, division_groups, unseeded_players, input.separations_by_player)
 
         groups.extend(division_groups)
 
@@ -62,6 +56,57 @@ def player_groups(input: Input) -> list[Group]:
     nextmv.log(f"Created {total_matches} matches.")
 
     return groups
+
+
+def __assign_unseeded(
+    division: str,
+    division_groups: list[Group],
+    unseeded_players: list[Player],
+    separations: dict[str, set[str]],
+    max_attempts: int = 1000,
+) -> None:
+    """Randomly distribute unseeded players over the groups of a division,
+    keeping group sizes balanced and never placing two players that are
+    separated from each other in the same group."""
+
+    # Group capacities are the same ones a round-robin deal would produce.
+    capacities = [len(g.players) for g in division_groups]
+    for i in range(len(unseeded_players)):
+        capacities[i % len(division_groups)] += 1
+
+    seeded = [list(g.players) for g in division_groups]
+    for _ in range(max_attempts):
+        players = list(unseeded_players)
+        random.shuffle(players)
+        # Most constrained players first, which makes dead ends rare.
+        players.sort(key=lambda p: -len(separations.get(p.player_id, ())))
+
+        assigned = [list(members) for members in seeded]
+        ok = True
+        for player in players:
+            blocked = separations.get(player.player_id, set())
+            options = [
+                i
+                for i, members in enumerate(assigned)
+                if len(members) < capacities[i] and not any(m.player_id in blocked for m in members)
+            ]
+            if not options:
+                ok = False
+                break
+            # Prefer the groups with the most room left, random among ties.
+            best = max(capacities[i] - len(assigned[i]) for i in options)
+            choice = random.choice([i for i in options if capacities[i] - len(assigned[i]) == best])
+            assigned[choice].append(player)
+
+        if ok:
+            for group, members in zip(division_groups, assigned):
+                group.players = members
+            return
+
+    raise ValueError(
+        f"Could not place the players of division {division} into groups without breaking the "
+        "player_separations constraints. A separation set may be larger than the number of groups."
+    )
 
 
 def load_groups_from_excel(path: str) -> list[Group]:
