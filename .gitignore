@@ -166,3 +166,6 @@ cython_debug/
 
 # Temp Excel files
 ~$*
+
+# macOS
+.DS_Store
